@@ -55,7 +55,7 @@ function joinGame($db)
   $statement->bindValue(':sessionId', $sessionId, PDO::PARAM_STR);
   $statement->execute();
   $gameSession = $statement->fetchAll(PDO::FETCH_ASSOC)[0];
-  if (empty(gameSession) || $gameSession['occupied'] !== '0')
+  if (empty($gameSession) || $gameSession['occupied'] !== '0')
   {
       return 'error';
   }
@@ -117,6 +117,29 @@ function getEvents($db)
   return "error fetching events";
 }
 
+function getOccupied($db)
+{
+  $sessionId = getParamGET('sessionId');
+  $statement = $db->prepare("
+    SELECT
+      id,
+      occupied,
+      created_at
+    FROM fgj16_session
+    WHERE id = :sessionId
+    ORDER BY created_at DESC
+    LIMIT 1
+  ");
+  $statement->bindValue(':sessionId', $sessionId, PDO::PARAM_STR);
+  $statement->execute();
+  $gameSession = $statement->fetchAll(PDO::FETCH_ASSOC)[0];
+  if (!empty($gameSession))
+  {
+      return $gameSession['occupied'] !== '0' ? 'occupied' : 'unoccupied';
+  }
+  return "not found";
+}
+
 $value = "An error has occurred";
 $action = getParamGET('action');
 
@@ -135,6 +158,9 @@ if ($action)
         break;
       case "getevents":
         $value = getEvents($db);
+        break;
+      case "getoccupied":
+        $value = getOccupied($db);
         break;
       default:
         $value = "unknown command";
