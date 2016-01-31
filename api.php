@@ -72,7 +72,7 @@ function joinGame($db)
 
 function addEvent($db)
 {
-  $data = getParamPOST('data');
+  $data = serialize(getParamPOST('data'));
   $sessionId = getParamPOST('sessionId');
   $playerId = getParamPOST('playerId');
   if($data && $sessionId)
@@ -97,20 +97,23 @@ function getEvents($db)
   $sessionId = getParamGET('sessionId');
   $playerId = getParamGET('playerId');
   $since = getParamGET('since') ? getParamGET('since') : date('Y-m-d H:i:s', strtotime('-5 minutes'));
-  if($sessionId && $playerId)
+  if($sessionId)
   {
     $events = array();
     $statement = $db->prepare("
-      SELECT id, data, created_at
+      SELECT id, data, created_at, player_id
       FROM fgj16_event
       WHERE session_id = ?
-      AND player_id = ?
-      AND created_at > ?
     ");
-    $statement->execute(array($sessionId, $playerId, $since));
+    $statement->execute(array($sessionId));
     while($row = $statement->fetch(PDO::FETCH_ASSOC))
     {
-      array_push($events, $row);
+      $array = array();
+      $array['data'] = unserialize($row['data']);
+      $array['id'] = $row['id'];
+      $array['created_at'] = $row['created_at'];
+      $array['playerId'] = $row['player_id'];
+      array_push($events, $array);
     }
     return json_encode($events);
   }
